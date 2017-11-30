@@ -55,8 +55,9 @@ static void init_random(void)
 static void *lift_thread(void *unused)
 {
 	while(1){
-	  void lift_next_floor(Lift, &next_floor, int *change_direction)
-	  // lift move
+	  lift_next_floor(Lift, &next_floor, &change_direction);
+	  lift_move(Lift, &next_floor, &change_direction);
+		lift_has_arrived(Lift);
 	}
 	return NULL;
 }
@@ -86,11 +87,11 @@ static void *passenger_thread(void *idptr)
 /*static void *user_thread(void *unused)
 {
 	int current_passenger_id = 0;
-	char message[SI_UI_MAX_MESSAGE_SIZE]; 
+	char message[SI_UI_MAX_MESSAGE_SIZE];
 
-	si_ui_set_size(670, 700); 
+	si_ui_set_size(670, 700);
 	prctl(PR_SET_NAME,"User Thread",0,0,0); // Sets the name shown in debuggers for this thread
-	
+
 	while(1){
 		// Read a message from the GUI
 		si_ui_receive(message);
@@ -119,8 +120,8 @@ int main(int argc, char **argv)
 	pthread_t lift_thread_handle;
 	phread_create(&lift_thread_handle, NULL, lift_thread, 0);
 	phread_join(lift_thread, NULL);
-	
-	
+
+
 
 	return 0;
 }
