@@ -57,12 +57,12 @@ static void *lift_thread(void *unused)
 {
   int next_floor;
   int change_direction;
- printf("hej2\n");
+
 	while(1){
 	  lift_next_floor(Lift, &next_floor, &change_direction);
 	  lift_move(Lift, next_floor, change_direction);
 	  //lift_has_arrived(Lift);
-	  printf("hej\n");
+
 	}
 	return NULL;
 }

@@ -73,7 +73,7 @@ void lift_delete(lift_type lift);
    the lift shall travel. The parameter *change_direction
    indicates if the direction shall be changed */
 void lift_next_floor(
-    lift_type lift, int *next_floor, int *change_direction); 
+    lift_type lift, int *next_floor, int *change_direction);
 
 
 /* MONITOR function lift_move: makes the lift move from its current

@@ -91,12 +91,25 @@ void lift_delete(lift_type lift)
    shall be changed */
 void lift_next_floor(lift_type lift, int *next_floor, int *change_direction)
 {
-  if(((lift->floor) < N_FLOORS) && ((lift->up)==1))
+  if(((lift->floor) < (N_FLOORS - 1)) && ((lift->up)==1))
     {
+      *change_direction = 0;
       *next_floor = lift->floor + 1;
     }
-  // else if (((lift->floor) > 0) && ((lift->up)==0))
-  
+else if (((lift->floor) > 0) && ((lift->up)==0))
+  {
+    *change_direction = 0;
+    *next_floor = lift->floor - 1;
+  }
+else if ((lift->floor) == 0)
+{
+  *change_direction = 1;
+}
+else if ((lift->floor) == (N_FLOORS - 1))
+{
+  *change_direction = 1;
+
+}
 }
 /* MONITOR function lift_move: makes the lift move from its current
    floor to next_floor. The parameter change_direction indicates if
@@ -105,7 +118,7 @@ void lift_next_floor(lift_type lift, int *next_floor, int *change_direction)
 void lift_move(lift_type lift, int next_floor, int change_direction)
 {
     /* reserve lift */
-    pthread_mutex_lock(&lift->mutex); 
+    pthread_mutex_lock(&lift->mutex);
 
     /* the lift is moving */
     lift->moving = 1;
@@ -148,7 +161,6 @@ static int n_passengers_in_lift(lift_type lift)
     {
         if (lift->passengers_in_lift[i].id != NO_ID)
         {
-            n_passengers++;
         }
     }
     return n_passengers;
