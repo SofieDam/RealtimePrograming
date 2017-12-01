@@ -40,7 +40,7 @@ lift_type lift_create(void)
     lift = (lift_type) malloc(sizeof(lift_data_type));
 
     /* initialise variables */
-MONITOR
+
     /* initialise floor */
     lift->floor = 0;
 
@@ -91,7 +91,12 @@ void lift_delete(lift_type lift)
    shall be changed */
 void lift_next_floor(lift_type lift, int *next_floor, int *change_direction)
 {
-
+  if(((lift->floor) < N_FLOORS) && ((lift->up)==1))
+    {
+      *next_floor = lift->floor + 1;
+    }
+  // else if (((lift->floor) > 0) && ((lift->up)==0))
+  
 }
 /* MONITOR function lift_move: makes the lift move from its current
    floor to next_floor. The parameter change_direction indicates if

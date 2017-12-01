@@ -8,6 +8,7 @@
 #include "lift.h"
 #include "si_ui.h"
 #include "debug.h"
+#include "draw.h"
 
 
 // Unfortunately the rand() function is not thread-safe. However, the
@@ -54,10 +55,14 @@ static void init_random(void)
 
 static void *lift_thread(void *unused)
 {
+  int next_floor;
+  int change_direction;
+ printf("hej2\n");
 	while(1){
 	  lift_next_floor(Lift, &next_floor, &change_direction);
-	  lift_move(Lift, &next_floor, &change_direction);
-		lift_has_arrived(Lift);
+	  lift_move(Lift, next_floor, change_direction);
+	  //lift_has_arrived(Lift);
+	  printf("hej\n");
 	}
 	return NULL;
 }
@@ -84,7 +89,8 @@ static void *passenger_thread(void *idptr)
 	return NULL;
 }
 */
-/*static void *user_thread(void *unused)
+ /*
+static void *user_thread(void *unused)
 {
 	int current_passenger_id = 0;
 	char message[SI_UI_MAX_MESSAGE_SIZE];
@@ -108,20 +114,23 @@ static void *passenger_thread(void *idptr)
 	}
 	return NULL;
 }
-
-*/
+ */
 int main(int argc, char **argv)
 {
 	si_ui_init();
 	init_random();
-	Lift = lift_create();
+		Lift = lift_create();
 
 	//create tasks
 	pthread_t lift_thread_handle;
-	phread_create(&lift_thread_handle, NULL, lift_thread, 0);
-	phread_join(lift_thread, NULL);
-
-
+	//pthread_t user_thread_handle;
+	//pthread_t passenger_thread_handle;
+	//pthread_create(&user_thread_handle, NULL, user_thread, 0);
+	pthread_create(&lift_thread_handle, NULL, lift_thread, 0);
+	//pthread_create(&passenger_thread_handle, NULL, passenger_thread, 0);
+	pthread_join(lift_thread_handle, NULL);
+	//pthread_join(passenger_thread, NULL);
+	//pthread_join(user_thread, NULL);
 
 	return 0;
 }
