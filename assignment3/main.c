@@ -66,7 +66,7 @@ static void *lift_thread(void *unused)
 	}
 	return NULL;
 }
-/*
+
 static void *passenger_thread(void *idptr)
 {
 	// Code that reads the passenger ID from the idptr pointer
@@ -76,24 +76,29 @@ static void *passenger_thread(void *idptr)
 	int *tmp = (int *) idptr;
 	int id = *tmp;
 
-        // Sets a unique name shown in debuggers
-        char buf[100];
-        sprintf(buf, "Passenger #%d", id);
+	// Sets a unique name shown in debuggers
+	char buf[100];
+	sprintf(buf, "Passenger #%d", id);
 	prctl(PR_SET_NAME,buf,0,0,0);
 
-	while(1){
-		// * Select random floors
+//	while(1){
+		//*select ramdom floor
+		int from_floor = get_random_value(id, 4);
+		int to_floor = get_random_value(id, 4);
 		// * Travel between these floors
-		// * Wait a little while
-	}
+		lift_travel(Lift, id, from_floor, to_floor);
+		// *Wait a little while försvinn 5 sek
+		usleep(5000000);
+//	}
 	return NULL;
 }
-*/
- /*
+
+
 static void *user_thread(void *unused)
 {
 	int current_passenger_id = 0;
 	char message[SI_UI_MAX_MESSAGE_SIZE];
+	int ids;
 
 	si_ui_set_size(670, 700);
 	prctl(PR_SET_NAME,"User Thread",0,0,0); // Sets the name shown in debuggers for this thread
@@ -107,30 +112,46 @@ static void *user_thread(void *unused)
 			// message if too many passengers have been
 			// created. Make sure that each passenger gets
 			// a unique ID between 0 and MAX_N_PERSONS-1.
-		}else if(!strcmp(message, "exit")){
+			if(current_passenger_id < MAX_N_PERSONS)
+				{
+					ids = current_passenger_id;
+					pthread_t passenger_thread_handle;
+					pthread_create(&passenger_thread_handle, NULL, passenger_thread, (void *) &ids);
+					pthread_detach(passenger_thread_handle);
+					current_passenger_id = current_passenger_id + 1;
+				}
+
+				else
+				{
+					si_ui_show_error(message);
+				}
+
+		}
+		else if(!strcmp(message, "exit")){
 			lift_delete(Lift);
 			exit(0);
 		}
 	}
 	return NULL;
 }
- */
+
 int main(int argc, char **argv)
 {
 	si_ui_init();
 	init_random();
-		Lift = lift_create();
+	Lift = lift_create();
+
 
 	//create tasks
 	pthread_t lift_thread_handle;
-	//pthread_t user_thread_handle;
-	//pthread_t passenger_thread_handle;
-	//pthread_create(&user_thread_handle, NULL, user_thread, 0);
+	pthread_t user_thread_handle;
+//	pthread_t passenger_thread_handle [10];
 	pthread_create(&lift_thread_handle, NULL, lift_thread, 0);
-	//pthread_create(&passenger_thread_handle, NULL, passenger_thread, 0);
+	pthread_create(&user_thread_handle, NULL, user_thread, 0);
+//	pthread_create(&passenger_thread_handle[], NULL, passenger_thread, 0);
 	pthread_join(lift_thread_handle, NULL);
-	//pthread_join(passenger_thread, NULL);
-	//pthread_join(user_thread, NULL);
+	//pthread_join(passenger_thread_handle, NULL);
+	pthread_join(user_thread_handle, NULL);
 
 	return 0;
 }

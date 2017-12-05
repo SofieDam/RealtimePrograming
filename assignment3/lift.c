@@ -90,27 +90,27 @@ void lift_delete(lift_type lift)
    shall travel. The parameter *change_direction indicates if the direction
    shall be changed */
 void lift_next_floor(lift_type lift, int *next_floor, int *change_direction)
-{
-  if(((lift->floor) < (N_FLOORS - 1)) && ((lift->up)==1))
+  {
+    if(((lift->floor) < (N_FLOORS - 1)) && ((lift->up)==1))
     {
       *change_direction = 0;
       *next_floor = lift->floor + 1;
     }
-else if (((lift->floor) > 0) && ((lift->up)==0))
-  {
-    *change_direction = 0;
-    *next_floor = lift->floor - 1;
-  }
-else if ((lift->floor) == 0)
-{
-  *change_direction = 1;
-}
-else if ((lift->floor) == (N_FLOORS - 1))
-{
-  *change_direction = 1;
+    else if (((lift->floor) > 0) && ((lift->up)==0))
+    {
+      *change_direction = 0;
+      *next_floor = lift->floor - 1;
+    }
+    else if ((lift->floor) == 0)
+    {
+      *change_direction = 1;
+    }
+    else if ((lift->floor) == (N_FLOORS - 1))
+    {
+      *change_direction = 1;
+    }
+    }
 
-}
-}
 /* MONITOR function lift_move: makes the lift move from its current
    floor to next_floor. The parameter change_direction indicates if
    the move includes a change of direction. This function shall be
@@ -161,6 +161,7 @@ static int n_passengers_in_lift(lift_type lift)
     {
         if (lift->passengers_in_lift[i].id != NO_ID)
         {
+          n_passengers++
         }
     }
     return n_passengers;
@@ -172,6 +173,12 @@ static int n_passengers_in_lift(lift_type lift)
    shall move again. */
 void lift_has_arrived(lift_type lift)
 {
+    pthread_cond_broadcast(&lift->change);
+    usleep(2000000);
+  /*if()
+  {
+
+  }*/
 }
 
 /* --- functions related to lift task END --- */
@@ -255,14 +262,59 @@ static void leave_floor(
     lift->persons_to_enter[enter_floor][floor_index].to_floor = NO_FLOOR;
 }
 
-/* MONITOR function lift_travel: performs a journey with the lift
-   starting at from_floor, and ending at to_floor */
+// Passenger enter lift
+static void enter_lift(lift_type lift, int id, int destination_floor)
+{
+  for(int i = 0; i < MAX_N_PASSENGERS; i++)
+  {
+    if(lift->passengers_in_lift[i].id == NO_ID)
+    {
+      lift->passengers_in_lift[i].id = i;
+      lift->passengers_in_lift[i].to_floor = destination_floor;
+      break;
+    }
+
+  }
+}
+
+// Passenger leave lift
+static void leave_lift(lift_type lift, int id)
+{
+  for(int i = 0; i < MAX_N_PASSENGERS; i++)
+  {
+    if(lift->passengers_in_lift[i].id == id)
+    {
+      lift->passengers_in_lift[i].id = NO_ID;
+      lift->passengers_in_lift[i].to_floor = NO_FLOOR;
+      break;
+    }
+
+  }
+
+}
 
 /* MONITOR function lift_travel: makes the person with id id perform
    a journey with the lift, starting at from_floor and ending
    at to_floor */
 void lift_travel(lift_type lift, int id, int from_floor, int to_floor)
 {
+    enter_floor(lift, id, from_floor);
+    // true (1) when passenger shall wait
+    while (passenger_wait_for_lift(lift, from_floor))
+    {
+        pthread_cond_wait(&lift->change, &lift->mutex);
+    }
+
+    leave_floor(lift, id, from_floor);
+
+    enter_lift(lift, id, to_floor);
+
+    while (to_floor != lift->floor)
+    {
+        pthread_cond_wait(&lift->change, &lift->mutex);
+    }
+    leave_lift(lift, id);
+
 }
 
 /* --- functions related to person task END --- */
