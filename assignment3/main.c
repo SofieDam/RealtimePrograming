@@ -61,8 +61,9 @@ static void *lift_thread(void *unused)
 	while(1){
 	  lift_next_floor(Lift, &next_floor, &change_direction);
 	  lift_move(Lift, next_floor, change_direction);
-	  //lift_has_arrived(Lift);
-
+	   
+	  lift_has_arrived(Lift);
+	 
 	}
 	return NULL;
 }
@@ -81,15 +82,22 @@ static void *passenger_thread(void *idptr)
 	sprintf(buf, "Passenger #%d", id);
 	prctl(PR_SET_NAME,buf,0,0,0);
 
-//	while(1){
+	while(1){
 		//*select ramdom floor
+	  
 		int from_floor = get_random_value(id, 4);
 		int to_floor = get_random_value(id, 4);
+		
+		while(from_floor == to_floor)
+		  {
+		    to_floor = get_random_value(id, 4);
+		  }
+
 		// * Travel between these floors
 		lift_travel(Lift, id, from_floor, to_floor);
 		// *Wait a little while försvinn 5 sek
 		usleep(5000000);
-//	}
+	}
 	return NULL;
 }
 
@@ -145,12 +153,10 @@ int main(int argc, char **argv)
 	//create tasks
 	pthread_t lift_thread_handle;
 	pthread_t user_thread_handle;
-//	pthread_t passenger_thread_handle [10];
+
 	pthread_create(&lift_thread_handle, NULL, lift_thread, 0);
 	pthread_create(&user_thread_handle, NULL, user_thread, 0);
-//	pthread_create(&passenger_thread_handle[], NULL, passenger_thread, 0);
 	pthread_join(lift_thread_handle, NULL);
-	//pthread_join(passenger_thread_handle, NULL);
 	pthread_join(user_thread_handle, NULL);
 
 	return 0;

@@ -127,7 +127,7 @@ void lift_move(lift_type lift, int next_floor, int change_direction)
     pthread_mutex_unlock(&lift->mutex);
 
     /* it takes two seconds to move to the next floor */
-    usleep(2000000);
+    usleep(1000000);
 
     /* reserve lift */
     pthread_mutex_lock(&lift->mutex);
@@ -161,11 +161,42 @@ static int n_passengers_in_lift(lift_type lift)
     {
         if (lift->passengers_in_lift[i].id != NO_ID)
         {
-          n_passengers++
+          n_passengers++;
         }
     }
     return n_passengers;
 }
+
+// Function to stop the lift
+int lift_stop(lift_type lift) 
+{
+  int stop = 0;
+  int i;
+  // Stop to leave passengers
+  for(i = 0; i < MAX_N_PASSENGERS; i++)
+    {
+      if(lift->passengers_in_lift[i].id != NO_ID)
+	{
+	if(lift->passengers_in_lift[i].to_floor == (lift->floor))
+	  {
+	    stop = 1;
+	  }
+	}
+    }
+
+  // stop to take passengers
+  for(i = 0; i < MAX_N_PASSENGERS; i++)
+    {
+      if((lift->persons_to_enter[lift->floor][i].id != NO_ID) && 
+	n_passengers_in_lift(lift) < MAX_N_PASSENGERS)
+	{
+	    stop = 1;
+	}
+    }
+  return stop;
+
+}
+
 
 /* MONITOR function lift_has_arrived: shall be called by the lift task
    when the lift has arrived at the next floor. This function indicates
@@ -173,12 +204,14 @@ static int n_passengers_in_lift(lift_type lift)
    shall move again. */
 void lift_has_arrived(lift_type lift)
 {
+  pthread_mutex_lock(&lift->mutex);
     pthread_cond_broadcast(&lift->change);
-    usleep(2000000);
-  /*if()
-  {
 
-  }*/
+    while(lift_stop(lift))
+  {
+    pthread_cond_wait(&lift->change, &lift->mutex);
+  }
+   pthread_mutex_unlock(&lift->mutex); 
 }
 
 /* --- functions related to lift task END --- */
@@ -200,6 +233,20 @@ static int passenger_wait_for_lift(lift_type lift, int wait_floor)
 
     return !waiting_ready;
 }
+
+
+static int passenger_leaving_lift(lift_type lift, int destination_floor)
+{
+    int leaving_ready =
+        /* the lift is not moving */
+        !lift->moving &&
+        /* and the lift is at destination_floor */
+      lift->floor == destination_floor;
+
+    return !leaving_ready;
+}
+
+
 
 /* enter_floor: makes a person with id id stand at floor floor */
 static void enter_floor(
@@ -265,22 +312,24 @@ static void leave_floor(
 // Passenger enter lift
 static void enter_lift(lift_type lift, int id, int destination_floor)
 {
-  for(int i = 0; i < MAX_N_PASSENGERS; i++)
+  int i;
+  for(i = 0; i < MAX_N_PASSENGERS; i++)
   {
     if(lift->passengers_in_lift[i].id == NO_ID)
     {
-      lift->passengers_in_lift[i].id = i;
+      lift->passengers_in_lift[i].id = id;
       lift->passengers_in_lift[i].to_floor = destination_floor;
       break;
     }
 
-  }
+  } 
 }
 
 // Passenger leave lift
 static void leave_lift(lift_type lift, int id)
 {
-  for(int i = 0; i < MAX_N_PASSENGERS; i++)
+  int i;
+  for(i = 0; i < MAX_N_PASSENGERS; i++)
   {
     if(lift->passengers_in_lift[i].id == id)
     {
@@ -298,6 +347,7 @@ static void leave_lift(lift_type lift, int id)
    at to_floor */
 void lift_travel(lift_type lift, int id, int from_floor, int to_floor)
 {
+  pthread_mutex_lock(&lift->mutex); 
     enter_floor(lift, id, from_floor);
     // true (1) when passenger shall wait
     while (passenger_wait_for_lift(lift, from_floor))
@@ -306,15 +356,17 @@ void lift_travel(lift_type lift, int id, int from_floor, int to_floor)
     }
 
     leave_floor(lift, id, from_floor);
-
     enter_lift(lift, id, to_floor);
+    pthread_cond_broadcast(&lift->change);
 
-    while (to_floor != lift->floor)
+
+    while (passenger_leaving_lift(lift, to_floor))
     {
         pthread_cond_wait(&lift->change, &lift->mutex);
     }
     leave_lift(lift, id);
-
+    pthread_cond_broadcast(&lift->change);
+    pthread_mutex_unlock(&lift->mutex); 
 }
 
 /* --- functions related to person task END --- */

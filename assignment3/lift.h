@@ -76,6 +76,8 @@ void lift_next_floor(
     lift_type lift, int *next_floor, int *change_direction);
 
 
+int lift_stop(lift_type lift); 
+
 /* MONITOR function lift_move: makes the lift move from its current
    floor to next_floor. The parameter change_direction indicates if
    the move includes a change of direction. This function shall be
