@@ -36,9 +36,8 @@ typedef struct
 {
     /* the floor where the lift is positioned */
     int floor;
-
-    /* a flag to indicate if the lift is moving */
-    int moving;
+  
+  //int moving;
 
     /* variable to indicate if the lift is travelling in the up
        direction, which is defined as the direction where the
@@ -51,11 +50,6 @@ typedef struct
     /* passengers in the lift */
     person_data_type passengers_in_lift[MAX_N_PASSENGERS];
 
-    /* mutex for mutual exclusion */
-    pthread_mutex_t mutex;
-
-    /* condition variable, to indicate that something has happend */
-    pthread_cond_t change;
 
 } lift_data_type;
 

@@ -11,7 +11,7 @@
 
 #include "draw.h"
 
-#define QUEUE_UI 0
+#define QUEUE_UI 0  //draw lift
 #define QUEUE_LIFT 1
 #define QUEUE_FIRSTPERSON 10
 
@@ -59,11 +59,16 @@ static void init_random(void)
 static void liftmove_process(void)
 {
 	struct lift_msg m;
-	while(1){
+	lift_msg_type type = LIFT_MOVE;
+	m.type = type;
+	while(1)
+	  {
 		// TODO:
 		//    Sleep 2 seconds
+	  usleep(2000000);
                 //    Send a message to the lift process to move the lift.
-	}
+	  message_send((char *) &m, sizeof(m), QUEUE_LIFT, 0);
+	   }
 }
 
 
@@ -91,18 +96,15 @@ static void lift_process(void)
 			// TODO:
 			//    Check if passengers want to leave elevator
                         //        Remove the passenger from the elevator
-                        //        Send a LIFT_TRAVEL_DONE for each passenger
-												//				that leaves
+                        //        Send a LIFT_TRAVEL_DONE for each passenger											
+		        //	  that leaves
                         //        the elevator
 			//    Check if passengers want to enter elevator
-                        //        Remove the passenger from the floor and into
-												//				the elevator
+                        //        Remove the passenger from the floor and into the elevator
 			//  Move the lift
-			while (1) {
+		
 				lift_next_floor(Lift, &next_floor, &change_direction);
 				lift_move(Lift, next_floor, change_direction);
-			}
-
 
 			break;
 		//case LIFT_TRAVEL:
