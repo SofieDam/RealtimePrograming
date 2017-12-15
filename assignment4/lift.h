@@ -98,27 +98,27 @@ void lift_travel(
 
 /* enter_floor: makes the person with id id and destination to_floor stand
    at floor floor */ 
-//void enter_floor(lift_type lift, int id, int floor, int to_floor);
+void enter_floor(lift_type lift, int id, int floor, int to_floor);
 
 
 
 /* leave_floor: makes a person, standing at floor floor, leave the
    floor. The id and destination of the person are returned in the
    parameters *id and *to_floor */
-//void leave_floor(lift_type lift, int floor, int *id, int *to_floor);
+void leave_floor(lift_type lift, int floor, int *id, int *to_floor);
 
 
 
 /* enter_lift: makes the person with id id and destination to_floor
    enter the lift */
-//void enter_lift(lift_type lift, int id, int to_floor);
+void enter_lift(lift_type lift, int id, int to_floor);
 
 
 
 /* leave_lift: makes a person, standing inside the lift and having
    destination floor equal to floor, leave the lift. The id of the
    person is returned in the parameter *id */
-//void leave_lift(lift_type lift, int floor, int *id);
+void leave_lift(lift_type lift, int floor, int *id);
 
 
 
@@ -130,7 +130,7 @@ void lift_travel(
 
 /* n_persons_to_enter: returns the number of persons standing on
    floor floor */
-//int n_persons_to_enter(lift_type lift, int floor);
+int n_persons_to_enter(lift_type lift, int floor);
 
 
 

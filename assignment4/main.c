@@ -15,6 +15,8 @@
 #define QUEUE_LIFT 1
 #define QUEUE_FIRSTPERSON 10
 
+int current_floor;
+
 // These variables keeps track of the process IDs of all processes
 // involved in the application so that they can be killed when the
 // exit command is received.
@@ -22,6 +24,7 @@ static pid_t lift_pid;
 static pid_t uidraw_pid;
 static pid_t liftmove_pid;
 static pid_t person_pid[MAX_N_PERSONS];
+static pid_t uicommand_pid;
 
 typedef enum {LIFT_TRAVEL, // A travel message is sent to the list process when a person would
 	                   // like to make a lift travel
@@ -65,7 +68,7 @@ static void liftmove_process(void)
 	  {
 		// TODO:
 		//    Sleep 2 seconds
-	  usleep(2000000);
+	  usleep(1000000);
                 //    Send a message to the lift process to move the lift.
 	  message_send((char *) &m, sizeof(m), QUEUE_LIFT, 0);
 	   }
@@ -76,7 +79,7 @@ static void lift_process(void)
 {
         lift_type Lift;
 	Lift = lift_create();
-	int change_direction, next_floor;
+	int change_direction, next_floor, to_floor;
 
 	char msgbuf[4096];
 	while(1){
@@ -96,24 +99,45 @@ static void lift_process(void)
 			// TODO:
 			//    Check if passengers want to leave elevator
                         //        Remove the passenger from the elevator
-                        //        Send a LIFT_TRAVEL_DONE for each passenger											
-		        //	  that leaves
+                        //        Send a LIFT_TRAVEL_DONE for each passenger that leaves
                         //        the elevator
-			//    Check if passengers want to enter elevator
+			//        Check if passengers want to enter elevator
                         //        Remove the passenger from the floor and into the elevator
-			//  Move the lift
-		
-				lift_next_floor(Lift, &next_floor, &change_direction);
-				lift_move(Lift, next_floor, change_direction);
+			//        Move the lift
 
-			break;
-		//case LIFT_TRAVEL:
+		  if (n_persons_to_enter(Lift, Lift->floor) > 0)
+		  {
+		    int i;
+		  
+		    for(i = 0; i < MAX_N_PERSONS; i++)
+		      {
+			if(Lift->persons_to_enter[Lift->floor][i].id != NO_ID)
+			  {			   
+			   leave_floor(Lift, Lift->floor, &Lift->persons_to_enter[Lift->floor][i].id , &Lift->persons_to_enter[Lift->floor][i].to_floor);	
+			   enter_lift(Lift, Lift->persons_to_enter[Lift->floor][i].id , to_floor);
+			   printf("in leave_lift, to floor %d\n",Lift->passengers_in_lift[i].to_floor);
+			   leave_lift(Lift, Lift->floor, &Lift->persons_to_enter[Lift->floor][i].id);
+			   
+			  }
+		      }
+		      
+		  }
+		  lift_next_floor(Lift, &next_floor, &change_direction);
+		  lift_move(Lift, next_floor, change_direction);
+		  break;
+
+	      	case LIFT_TRAVEL:
                         // TODO:
                         //    Update the Lift structure so that the person with
-												//		the given ID  is now present on the floor
-			//break;
+	       	        //    the given ID  is now present on the floor
+		  enter_floor(Lift, m->person_id, m->from_floor , m->to_floor);
+		  to_floor = m->to_floor;
+		
+		 
+		  
+		  break;
 		}
-	}
+		}
 	return;
 }
 
@@ -122,20 +146,37 @@ static void person_process(int id)
 	init_random();
 	char buf[4096];
 	struct lift_msg m;
-	while(1){
+	lift_msg_type type = LIFT_TRAVEL;
+	m.type = type;
+	
+	//while(1){
 		// TODO:
 		//    Generate a to and from floor
 		//    Send a LIFT_TRAVEL message to the lift process
                 //    Wait for a LIFT_TRAVEL_DONE message
 		//    Wait a little while
-	}
+	  		m.from_floor = get_random_value(id, 4); 		
+		        m.to_floor = get_random_value(id, 4);
+			//current_floor = m.from_floor;
+
+ 		while(m.from_floor == m.to_floor) 		 
+		  { 		    
+		    m.to_floor = get_random_value(id, 4); 
+		   
+		  }
+	
+
+		//destination_floor = m.to_floor;
+		
+		message_send((char *) &m, sizeof(m), QUEUE_LIFT, 0);
+		//}
 }
 
 // This is the final process called by main()
 // It is responsible for:
 //   * Receiving and executing commands from the java GUI
 //   * Killing off all processes when exiting the application
-/*void uicommand_process(void)
+void uicommand_process(void)
 {
 	int i;
 	int current_person_id = 0;
@@ -148,6 +189,20 @@ static void person_process(int id)
 			// * Check that we don't create too many persons
 			// * fork and create a new person process (and
 			//   record the new pid in person_pid[])
+		  if(current_person_id < MAX_N_PERSONS)
+		    {
+		      	person_pid[current_person_id] = fork();
+
+			if(!person_pid[current_person_id])
+
+			  {
+			    person_process(current_person_id);
+			  }
+
+			current_person_id = current_person_id + 1;
+			
+		    }
+
 		}else if(!strcmp(message, "exit")){
 			// The code below sends the SIGINT signal to
 			// all processes involved in this application
@@ -165,7 +220,7 @@ static void person_process(int id)
 		}
 	}
 }
-*/
+
 // This process is responsible for drawing the lift. Receives lift_type structures
 // as messages.
 void uidraw_process(void)
@@ -197,11 +252,13 @@ int main(int argc, char **argv)
 	if(!liftmove_pid){
 		liftmove_process();
 	}
-	/*
+	
 	uicommand_pid = fork();
 	if(!uicommand_pid)
-	{uicommand_process();}
-	*/
+	{
+	  uicommand_process();
+	}
+	
 
 	return 0;
 }
